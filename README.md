@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-FlowState is a full-stack web application built on the MERN stack that connects to the Spotify Web API to deliver a mood-driven listening experience. Instead of just playing music, FlowState asks how you're feeling before every session Rage, Focused, Sad, Hype, Faith, or Chill, and tracks that emotional context over time.
+FlowState is a full-stack web application built on the MERN stack that connects to the Spotify Web API to deliver a mood-driven listening experience. Instead of just playing music, FlowState asks how you're feeling before every session — Rage, Focused, Sad, Hype, Faith, or Chill — and tracks that emotional context over time.
 
 ### Features
 
@@ -24,31 +24,24 @@ FlowState is a full-stack web application built on the MERN stack that connects 
 
 ## Prerequisites
 
-Make sure you have the following installed and set up before running FlowState locally.
+Make sure you have the following installed before running FlowState locally.
 
 ### Software
 
-| Requirement | Version     | Notes                                                                             |
-| ----------- | ----------- | --------------------------------------------------------------------------------- |
-| Node.js     | v18.x (LTS) | [Download here](https://nodejs.org)                                               |
-| npm         | v10.x       | Comes bundled with Node.js                                                        |
-| MongoDB     | v7.x        | Local install or [MongoDB Atlas](https://www.mongodb.com/atlas) (free tier works) |
-| Git         | Latest      | [Download here](https://git-scm.com)                                              |
+| Requirement | Version   | Notes                                                          |
+| ----------- | --------- | -------------------------------------------------------------- |
+| Docker      | Latest    | [Download Docker Desktop](https://www.docker.com/products/docker-desktop) |
+| Git         | Latest    | [Download here](https://git-scm.com)                            |
 
 ### Accounts & API Access
 
 - **Spotify Developer Account** — Required to generate your `CLIENT_ID` and `CLIENT_SECRET`. Register your app at [developer.spotify.com](https://developer.spotify.com/dashboard).
-- **MongoDB Atlas** (optional) — If you prefer a cloud database over a local MongoDB install.
-
-### Browser
-
-- Google Chrome (latest) or any modern browser with ES6+ support.
 
 ---
 
 ## Getting Started
 
-Follow these steps to get a local copy of FlowState up and running.
+Follow these steps to get a local copy of FlowState up and running with Docker.
 
 ### 1. Clone the Repository
 
@@ -57,47 +50,13 @@ git clone https://github.com/your-username/flowstate.git
 cd flowstate
 ```
 
-### 2. Install Dependencies
+### 2. Set Up Environment Variables
 
-FlowState has two separate apps: a backend (Express) and a frontend (React). Install dependencies for both.
-
-```bash
-# Install backend dependencies
-cd server
-npm install
-
-# Install frontend dependencies
-cd ../client
-npm install
-```
-
-### 3. Set Up Environment Variables
-
-FlowState uses `dotenv` to manage secrets. **Never commit your `.env` file to GitHub.**
-
-In the `/server` directory, create a `.env` file:
-
-```bash
-cd server
-touch .env
-```
-
-Add the following variables to your `.env` file:
+Create a `.env` file in the root directory with your Spotify credentials:
 
 ```env
-# Server
-PORT=5001
-NODE_ENV=development
-
-# MongoDB
-MONGO_URI=your_mongodb_connection_string_here
-
-# Spotify API
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URI=http://localhost:5001/auth/callback
-
-# JWT
 JWT_SECRET=your_custom_jwt_secret_here
 ```
 
@@ -108,31 +67,28 @@ JWT_SECRET=your_custom_jwt_secret_here
 > 3. Set the Redirect URI to `http://localhost:5001/auth/callback`
 > 4. Copy your `Client ID` and `Client Secret` into the `.env` file above
 
-### 4. Run the Application
-
-Open two terminal windows, one for the backend, one for the frontend.
-
-**Terminal 1 — Start the backend server:**
+### 3. Run with Docker
 
 ```bash
-cd server
-npm run dev
+docker compose up --build
 ```
 
-The Express server will start on `http://localhost:5001`
+This will:
+- Build the Express backend image
+- Build the React frontend image
+- Start MongoDB
+- Start the backend on `http://localhost:5001`
+- Start the frontend on `http://localhost:3000`
 
-**Terminal 2 — Start the frontend:**
+### 4. Open in Browser
+
+Visit `http://localhost:3000` in your browser. If no JWT is stored, you'll see the login screen. Click **Connect with Spotify** to authenticate and get started.
+
+### To Stop
 
 ```bash
-cd client
-npm run dev
+docker compose down
 ```
-
-The React app will start on `http://localhost:5173`
-
-### 5. Open in Browser
-
-Visit `http://localhost:5173` in your browser. If no JWT is stored, you'll see the login screen. Click **Connect with Spotify** to authenticate and get started.
 
 ---
 
@@ -146,6 +102,7 @@ flowstate/
 │   │   ├── pages/          # Dashboard, Stats, Sessions, Settings
 │   │   ├── hooks/          # Custom React hooks
 │   │   └── main.jsx        # App entry point
+│   ├── Dockerfile
 │   └── package.json
 │
 ├── server/                 # Express backend
@@ -153,9 +110,12 @@ flowstate/
 │   ├── controllers/        # Business logic
 │   ├── models/             # Mongoose schemas
 │   ├── middleware/         # Auth middleware, JWT validation
-│   ├── .env                # Environment variables (never commit this)
-│   └── server.js           # Entry point
+│   ├── Dockerfile
+│   └── package.json
 │
+├── docker-compose.yml      # Docker orchestration
+├── .dockerignore            # Docker build exclusions
+├── .env                     # Environment variables (never commit this)
 └── README.md
 ```
 
@@ -168,9 +128,30 @@ flowstate/
 | Frontend        | React 18, Vite, Tailwind CSS         |
 | Backend         | Node.js, Express.js                  |
 | Database        | MongoDB, Mongoose                    |
-| Auth            | Spotify OAuth 2.0, JWT, dotenv       |
+| Auth            | Spotify OAuth 2.0, JWT               |
+| Containerization| Docker, Docker Compose               |
 | Third-Party API | Spotify Web API                      |
-| Deployment      | Vercel (frontend), Railway (backend) |
+| Deployment      | Vercel (frontend), Heroku (backend)  |
+
+---
+
+## Development
+
+To run the application locally without Docker:
+
+```bash
+# Terminal 1 — Backend (requires MongoDB running locally)
+cd server
+npm install
+npm run dev
+
+# Terminal 2 — Frontend
+cd client
+npm install
+npm run dev
+```
+
+Visit `http://localhost:5173` for the frontend.
 
 ---
 
