@@ -1,47 +1,86 @@
 # FlowState 🎵
 
-> Your music, finally intelligent. A mood-aware Spotify companion that tracks how you listen, surfaces insights you've never seen, and keeps your sessions intentional.
+> A Spotify companion and mood journal. Play music in Spotify, log how you feel in FlowState — with the songs that soundtrack each moment.
 
 ---
 
 ## Project Overview
 
-FlowState is a full-stack web application built on the MERN stack that connects to the Spotify Web API to deliver a mood-driven listening experience. Instead of just playing music, FlowState asks how you're feeling before every session — Rage, Focused, Sad, Hype, Faith, or Chill — and tracks that emotional context over time.
+FlowState is a full-stack web application built on the MERN stack that runs **alongside Spotify** (like Last.fm). It does not replace Spotify for playback. Users connect via **Spotify OAuth 2.0**, search for music, see what's currently playing, and write mood journal entries with optional song context.
 
-### Features
+**Product pitch:** Spotify shows what you played — FlowState captures *how you felt* and *why*, with the music attached.
 
-- **Spotify OAuth 2.0 Authentication** — Secure login via Spotify. JWT is stored in the database and automatically refreshed when expired. No re-login needed while your token is valid.
-- **Mood Selector** — Choose your mood before every session. Each mood has its own visual identity and color.
-- **Mood-Aware Dashboard** — See your currently playing track, your active mood, and a weekly snapshot of your listening behavior.
-- **My Stats** — A deep-dive stats page showing total listening time, top mood, peak listening hours, mood breakdown percentages, and top artists sorted by the mood you listen to them in.
-- **Session History** — Every listening session is logged with mood, duration, track count, and timestamp. Filter by mood to find past sessions.
-- **Clean Mode** — A session-level toggle that filters explicit tracks. When enabled, FlowState swaps for the clean version of a track if available via the Spotify API.
-- **Streak Tracker** — Tracks consecutive days you've logged a session.
-- **No Results State** — Friendly empty state displayed when no search has been performed or the API returns no results.
-- **Search** — Search for artists and tracks. Each result links directly to the Spotify Web Player.
+### How it works
+
+1. **Log in** with Spotify (OAuth 2.0)
+2. **Play music in Spotify** (desktop, mobile, or web)
+3. **Open FlowState** — see now playing, pick a mood, write a note
+4. **Add a song to your entry** from now playing or Search
+5. **Browse Timeline & Insights** — patterns, streaks, top tracks by mood
+
+---
+
+## Features
+
+### Auth & Spotify (required)
+
+- **Spotify OAuth 2.0** — Secure login via Spotify. JWT stored in the database with automatic token refresh.
+- **Search** — Search artists, albums, and songs via the Spotify Web API. Results link to Spotify player URLs.
+- **No Results State** — Empty state when no query has been entered or the API returns nothing.
+
+### Companion & journal
+
+- **Now Playing** — Live-sync from Spotify (`currently-playing`). Open track in Spotify with one click.
+- **Add to Entry** — Attach the current track (or a song from Search) to a journal entry.
+- **Mood Selector** — Six moods with distinct visual identity: Rage, Focused, Sad, Hype, Faith, Chill.
+- **Journal Entries** — Mood + note + optional tags + optional Spotify track, saved to MongoDB.
+- **Timeline** — Browse past entries, filter by mood, open attached tracks in Spotify.
+- **Insights** — Entry counts, mood breakdown, peak journaling time, top tracks by mood, weekly summary card.
+- **Streak Tracker** — Consecutive days with at least one journal entry.
+
+### Settings
+
+- Default mood, reflection prompts, now-playing sync toggle
+- Export entries (JSON)
+- Reconnect Spotify, clear journal data
+
+---
+
+## Pages
+
+| Page | Description |
+| ---- | ----------- |
+| **Login** | Spotify OAuth gate — must connect before using the app |
+| **Today** | Now playing, mood picker, journal note, save entry |
+| **Search** | Artists, albums, songs — open in Spotify or add song to entry |
+| **Timeline** | Journal history with mood filters and streak |
+| **Insights** | Stats, mood breakdown, top tracks by mood |
+| **Settings** | Profile, journal prefs, account |
+
+> **Design mockup:** See `flowstate_full_mockup.html` in Downloads for the full UI reference.
 
 ---
 
 ## Prerequisites
 
-Make sure you have the following installed before running FlowState locally.
-
 ### Software
 
-| Requirement | Version   | Notes                                                          |
-| ----------- | --------- | -------------------------------------------------------------- |
-| Docker      | Latest    | [Download Docker Desktop](https://www.docker.com/products/docker-desktop) |
-| Git         | Latest    | [Download here](https://git-scm.com)                            |
+| Requirement | Version | Notes |
+| ----------- | ------- | ----- |
+| Docker | Latest | [Download Docker Desktop](https://www.docker.com/products/docker-desktop) |
+| Git | Latest | [Download here](https://git-scm.com) |
 
 ### Accounts & API Access
 
-- **Spotify Developer Account** — Required to generate your `CLIENT_ID` and `CLIENT_SECRET`. Register your app at [developer.spotify.com](https://developer.spotify.com/dashboard).
+- **Spotify Developer Account** — Register at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard). Create a **Web API** app and set your redirect URI.
+
+  > **Important (2026):** Development Mode requires the **app owner** to have an active **Spotify Premium** subscription. Dev apps are limited to **5 authorized users**. Add testers in the Developer Dashboard under Users Management.
+
+- **MongoDB Atlas** — Free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas).
 
 ---
 
 ## Getting Started
-
-Follow these steps to get a local copy of FlowState up and running with Docker.
 
 ### 1. Clone the Repository
 
@@ -52,20 +91,30 @@ cd flowstate
 
 ### 2. Set Up Environment Variables
 
-Create a `.env` file in the root directory with your Spotify credentials:
+Create a `.env` file in the project root:
 
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-JWT_SECRET=your_custom_jwt_secret_here
+JWT_SECRET=your_jwt_secret_here
+MONGO_URI=your_mongodb_uri_here
 ```
 
-> **How to get your Spotify credentials:**
+> **Spotify credentials:**
 >
 > 1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
-> 2. Click **Create App**
-> 3. Set the Redirect URI to `http://localhost:5001/auth/callback`
-> 4. Copy your `Client ID` and `Client Secret` into the `.env` file above
+> 2. Create an app (select **Web API**)
+> 3. Copy `Client ID` and `Client Secret`
+> 4. Set Redirect URI to `http://127.0.0.1:5001/auth/callback`
+> 5. Add authorized users under **Users Management** (dev mode, max 5)
+
+> **MongoDB URI:**
+>
+> 1. Create a cluster on [MongoDB Atlas](https://www.mongodb.com/atlas)
+> 2. Connect → copy connection string
+> 3. Add to `.env`
+
+> **JWT secret:** Run `openssl rand -base64 32`
 
 ### 3. Run with Docker
 
@@ -74,21 +123,31 @@ docker compose up --build
 ```
 
 This will:
-- Build the Express backend image
-- Build the React frontend image
+
+- Build the Express backend and React frontend images
 - Start MongoDB
-- Start the backend on `http://localhost:5001`
-- Start the frontend on `http://localhost:3000`
+- Start the backend on `http://127.0.0.1:5001`
+- Start the frontend on `http://127.0.0.1:3000`
 
 ### 4. Open in Browser
 
-Visit `http://localhost:3000` in your browser. If no JWT is stored, you'll see the login screen. Click **Connect with Spotify** to authenticate and get started.
+Visit `http://127.0.0.1:3000`. Click **Connect with Spotify** to log in, then use Today to journal or Search to find music.
 
 ### To Stop
 
 ```bash
 docker compose down
 ```
+
+---
+
+## Links
+
+- **Frontend:** <http://127.0.0.1:3000>
+- **Backend API:** <http://127.0.0.1:5001>
+- **MongoDB (local):** mongodb://127.0.0.1:27017
+- **Spotify Developer Dashboard:** <https://developer.spotify.com/dashboard>
+- **MongoDB Atlas:** <https://www.mongodb.com/atlas>
 
 ---
 
@@ -99,23 +158,23 @@ flowstate/
 ├── client/                 # React frontend (Vite + Tailwind CSS)
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Dashboard, Stats, Sessions, Settings
+│   │   ├── pages/          # Login, Today, Search, Timeline, Insights, Settings
 │   │   ├── hooks/          # Custom React hooks
 │   │   └── main.jsx        # App entry point
 │   ├── Dockerfile
 │   └── package.json
 │
 ├── server/                 # Express backend
-│   ├── routes/             # API route handlers
+│   ├── routes/             # API route handlers (auth, entries, search, spotify)
 │   ├── controllers/        # Business logic
-│   ├── models/             # Mongoose schemas
+│   ├── models/             # Mongoose schemas (User, JournalEntry)
 │   ├── middleware/         # Auth middleware, JWT validation
 │   ├── Dockerfile
 │   └── package.json
 │
-├── docker-compose.yml      # Docker orchestration
-├── .dockerignore            # Docker build exclusions
-├── .env                     # Environment variables (never commit this)
+├── docker-compose.yml
+├── .dockerignore
+├── .env                    # Never commit this
 └── README.md
 ```
 
@@ -123,24 +182,37 @@ flowstate/
 
 ## Tech Stack
 
-| Layer           | Technology                           |
-| --------------- | ------------------------------------ |
-| Frontend        | React 18, Vite, Tailwind CSS         |
-| Backend         | Node.js, Express.js                  |
-| Database        | MongoDB, Mongoose                    |
-| Auth            | Spotify OAuth 2.0, JWT               |
-| Containerization| Docker, Docker Compose               |
-| Third-Party API | Spotify Web API                      |
-| Deployment      | Vercel (frontend), Heroku (backend)  |
+| Layer | Technology |
+| ----- | ---------- |
+| Frontend | React 18, Vite, Tailwind CSS |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Auth | Spotify OAuth 2.0, JWT |
+| Containerization | Docker, Docker Compose |
+| Third-Party API | Spotify Web API |
+| Deployment | Vercel (frontend), Heroku (backend) |
+
+---
+
+## Spotify API Usage
+
+| Feature | Endpoint / flow |
+| ------- | ---------------- |
+| Login | OAuth 2.0 Authorization Code |
+| Search | `GET /search` (artists, albums, tracks) |
+| Now playing | `GET /me/player/currently-playing` |
+| Open in Spotify | External links to `open.spotify.com` |
+
+FlowState is a **companion app** — playback happens in Spotify, not inside FlowState.
 
 ---
 
 ## Development
 
-To run the application locally without Docker:
+Without Docker:
 
 ```bash
-# Terminal 1 — Backend (requires MongoDB running locally)
+# Terminal 1 — Backend
 cd server
 npm install
 npm run dev
@@ -151,16 +223,35 @@ npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173` for the frontend.
+Frontend dev server: `http://127.0.0.1:5173`
 
 ---
 
 ## Deployment
 
-- **Frontend** is deployed on [Vercel](https://vercel.com)
-- **Backend** is deployed on [Heroku](https://www.heroku.com)
+- **Frontend:** [Vercel](https://vercel.com)
+- **Backend:** [Heroku](https://www.heroku.com)
 
-When deploying, add all environment variables from your `.env` file directly into your hosting platform's environment settings. **Do not push your `.env` file to your repository.**
+Add all `.env` variables to your hosting platform. **Do not commit `.env` to the repository.**
+
+Update the Spotify redirect URI in the Developer Dashboard to match your production backend URL.
+
+---
+
+## Planned (v2)
+
+- **Mood-based playlists** — Build Spotify playlists from songs you've logged on past entries for a given mood (e.g. all tracks from Rage entries → "Your Rage Soundtrack"). Uses your journal data, not AI recommendations. Triggered from Insights via a **Create playlist** action; creates or updates a playlist in Spotify through the Web API.
+- **Fallback if dev-mode limits apply** — Show a mood-based track list in FlowState with per-track **Open in Spotify** links if playlist creation endpoints are restricted.
+
+---
+
+## Portfolio Notes
+
+**Problem:** Spotify tracks listening history, not emotional context or intention.
+
+**Solution:** A mood journal companion that ties entries to Spotify tracks — patterns from real behavior, not AI-generated playlists.
+
+**Differentiator:** Journal-first product with Spotify as identity + context layer (companion model, not a mood-AI recommender).
 
 ---
 
