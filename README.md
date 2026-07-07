@@ -6,25 +6,43 @@
 
 ## Project Overview
 
-FlowState is a full-stack web application built on the MERN stack that runs **alongside Spotify** (like Last.fm). It does not replace Spotify for playback. Users connect via **Spotify OAuth 2.0**, search for music, see what's currently playing, and write mood journal entries with optional song context.
+FlowState is a full-stack web application built on the MERN stack that runs **alongside Spotify** (like Last.fm). It does not replace Spotify for playback. Users **log in with Google**, optionally **connect Spotify** for music features, search for music, see what's currently playing, and write mood journal entries with optional song context.
 
 **Product pitch:** Spotify shows what you played — FlowState captures *how you felt* and *why*, with the music attached.
 
+### Auth architecture
+
+FlowState uses **two separate OAuth flows**:
+
+| Provider | Purpose | When |
+| -------- | ------- | ---- |
+| **Google** | App login — who you are | First visit — "Log in with Google" |
+| **Spotify** | Music data — search, now playing, track links | After login — "Connect Spotify" in Settings |
+
+> **Why Google for login?** Spotify Developer Mode now requires a Premium subscription for OAuth. Google handles authentication; Spotify remains the music integration. This is **Google Cloud OAuth 2.0** (credentials from [Google Cloud Console](https://console.cloud.google.com/)) — not Firebase Auth.
+
+Sessions use a **JWT stored in an HTTP-only cookie** after Google login.
+
 ### How it works
 
-1. **Log in** with Spotify (OAuth 2.0)
-2. **Play music in Spotify** (desktop, mobile, or web)
-3. **Open FlowState** — see now playing, pick a mood, write a note
-4. **Add a song to your entry** from now playing or Search
-5. **Browse Timeline & Insights** — patterns, streaks, top tracks by mood
+1. **Log in** with Google (OAuth 2.0)
+2. **Connect Spotify** (second OAuth — optional until you need music features)
+3. **Play music in Spotify** (desktop, mobile, or web)
+4. **Open FlowState** — see now playing, pick a mood, write a note
+5. **Add a song to your entry** from now playing or Search
+6. **Browse Timeline & Insights** — patterns, streaks, top tracks by mood
 
 ---
 
 ## Features
 
-### Auth & Spotify (required)
+### Auth & accounts
 
-- **Spotify OAuth 2.0** — Secure login via Spotify. JWT stored in the database with automatic token refresh.
+- **Google OAuth 2.0** — App login via Google Cloud Console. User profile saved to MongoDB; session JWT issued in an HTTP-only cookie.
+- **Spotify OAuth 2.0** — Separate "Connect Spotify" flow for music API access (search, now playing). Tokens stored on the user record after Google login.
+
+### Spotify features (requires Connect Spotify)
+
 - **Search** — Search artists, albums, and songs via the Spotify Web API. Results link to Spotify player URLs.
 - **No Results State** — Empty state when no query has been entered or the API returns nothing.
 
@@ -42,7 +60,7 @@ FlowState is a full-stack web application built on the MERN stack that runs **al
 
 - Default mood, reflection prompts, now-playing sync toggle
 - Export entries (JSON)
-- Reconnect Spotify, clear journal data
+- Connect / reconnect Spotify, clear journal data
 
 ---
 
@@ -50,7 +68,7 @@ FlowState is a full-stack web application built on the MERN stack that runs **al
 
 | Page | Description |
 | ---- | ----------- |
-| **Login** | Spotify OAuth gate — must connect before using the app |
+| **Login** | Google OAuth gate — must log in before using the app |
 | **Today** | Now playing, mood picker, journal note, save entry |
 | **Search** | Artists, albums, songs — open in Spotify or add song to entry |
 | **Timeline** | Journal history with mood filters and streak |
@@ -72,9 +90,13 @@ FlowState is a full-stack web application built on the MERN stack that runs **al
 
 ### Accounts & API Access
 
-- **Spotify Developer Account** — Register at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard). Create a **Web API** app and set your redirect URI.
+- **Google Cloud project** — For app login. Create an OAuth 2.0 Web client at [console.cloud.google.com](https://console.cloud.google.com/) (APIs & Services → Credentials). This is **not** Firebase — you use Google's OAuth endpoints directly from Express.
 
-  > **Important (2026):** Development Mode requires the **app owner** to have an active **Spotify Premium** subscription. Dev apps are limited to **5 authorized users**. Add testers in the Developer Dashboard under Users Management.
+  > **Setup:** OAuth consent screen (External) → add yourself as a test user → create Web application client → redirect URI `http://127.0.0.1:5001/auth/google/callback`
+
+- **Spotify Developer Account** — For music features only (Connect Spotify). Register at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard). Create a **Web API** app.
+
+  > **Note:** Spotify OAuth is used for **music API access**, not login. Dev mode may require Premium for the app owner; Google handles authentication instead.
 
 - **MongoDB Atlas** — Free cluster at [mongodb.com/atlas](https://www.mongodb.com/atlas).
 
@@ -94,19 +116,36 @@ cd flowstate
 Create a `.env` file in the project root:
 
 ```env
-SPOTIFY_CLIENT_ID=your_spotify_client_id_here
-SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+# Google — app login
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_REDIRECT_URI=http://127.0.0.1:5001/auth/google/callback
+CLIENT_URL=http://127.0.0.1:3000
+
+# App session & database
 JWT_SECRET=your_jwt_secret_here
 MONGO_URI=your_mongodb_uri_here
+
+# Spotify — music features (Connect Spotify flow)
+SPOTIFY_CLIENT_ID=your_spotify_client_id_here
+SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:5001/auth/spotify/callback
 ```
 
-> **Spotify credentials:**
+> **Google credentials:**
+>
+> 1. Go to [console.cloud.google.com](https://console.cloud.google.com/) → select your FlowState project
+> 2. APIs & Services → OAuth consent screen → configure (External, add test users)
+> 3. Credentials → Create OAuth client ID → Web application
+> 4. Authorized redirect URI: `http://127.0.0.1:5001/auth/google/callback`
+> 5. Copy Client ID and Client Secret into `.env`
+
+> **Spotify credentials** (for Connect Spotify later):
 >
 > 1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
 > 2. Create an app (select **Web API**)
 > 3. Copy `Client ID` and `Client Secret`
-> 4. Set Redirect URI to `http://127.0.0.1:5001/auth/callback`
-> 5. Add authorized users under **Users Management** (dev mode, max 5)
+> 4. Set Redirect URI to `http://127.0.0.1:5001/auth/spotify/callback`
 
 > **MongoDB URI:**
 >
@@ -131,7 +170,7 @@ This will:
 
 ### 4. Open in Browser
 
-Visit `http://127.0.0.1:3000`. Click **Connect with Spotify** to log in, then use Today to journal or Search to find music.
+Visit `http://127.0.0.1:3000`. Click **Log in with Google**, then **Connect Spotify** when you need music features.
 
 ### To Stop
 
@@ -146,6 +185,7 @@ docker compose down
 - **Frontend:** <http://127.0.0.1:3000>
 - **Backend API:** <http://127.0.0.1:5001>
 - **MongoDB (local):** mongodb://127.0.0.1:27017
+- **Google Cloud Console:** <https://console.cloud.google.com/>
 - **Spotify Developer Dashboard:** <https://developer.spotify.com/dashboard>
 - **MongoDB Atlas:** <https://www.mongodb.com/atlas>
 
@@ -187,21 +227,22 @@ flowstate/
 | Frontend | React 18, Vite, Tailwind CSS |
 | Backend | Node.js, Express.js |
 | Database | MongoDB, Mongoose |
-| Auth | Spotify OAuth 2.0, JWT |
+| Auth | Google OAuth 2.0 (login), Spotify OAuth 2.0 (music), JWT (HTTP-only cookie) |
 | Containerization | Docker, Docker Compose |
 | Third-Party API | Spotify Web API |
 | Deployment | Vercel (frontend), Heroku (backend) |
 
 ---
 
-## Spotify API Usage
+## API & OAuth flows
 
-| Feature | Endpoint / flow |
-| ------- | ---------------- |
-| Login | OAuth 2.0 Authorization Code |
-| Search | `GET /search` (artists, albums, tracks) |
-| Now playing | `GET /me/player/currently-playing` |
-| Open in Spotify | External links to `open.spotify.com` |
+| Feature | Provider | Flow |
+| ------- | -------- | ---- |
+| App login | Google | `GET /auth/google` → callback → JWT cookie |
+| Connect Spotify | Spotify | `GET /auth/spotify` → callback → tokens on user |
+| Search | Spotify Web API | `GET /search` (artists, albums, tracks) |
+| Now playing | Spotify Web API | `GET /me/player/currently-playing` |
+| Open in Spotify | — | External links to `open.spotify.com` |
 
 FlowState is a **companion app** — playback happens in Spotify, not inside FlowState.
 
@@ -234,7 +275,7 @@ Frontend dev server: `http://127.0.0.1:5173`
 
 Add all `.env` variables to your hosting platform. **Do not commit `.env` to the repository.**
 
-Update the Spotify redirect URI in the Developer Dashboard to match your production backend URL.
+Update redirect URIs in Google Cloud Console and Spotify Developer Dashboard to match your production backend URL.
 
 ---
 
@@ -251,7 +292,7 @@ Update the Spotify redirect URI in the Developer Dashboard to match your product
 
 **Solution:** A mood journal companion that ties entries to Spotify tracks — patterns from real behavior, not AI-generated playlists.
 
-**Differentiator:** Journal-first product with Spotify as identity + context layer (companion model, not a mood-AI recommender).
+**Differentiator:** Journal-first product with Google for identity, Spotify for music context (companion model, not a mood-AI recommender).
 
 ---
 

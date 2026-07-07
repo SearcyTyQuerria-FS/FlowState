@@ -14,6 +14,7 @@ app.get('/', (req, res) => {
 });
 
 // Confirms env vars loaded from .env without exposing secret values
+// TODO: test with google auth
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',

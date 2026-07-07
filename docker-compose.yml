@@ -19,14 +19,24 @@ services:
       context: ./server
       dockerfile: Dockerfile
     container_name: flowstate-server
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       PORT: 5001
+      # Google login
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      CLIENT_URL: ${CLIENT_URL}
+      # App session + database
+      JWT_SECRET: ${JWT_SECRET}
       MONGO_URI: ${MONGO_URI}
+      # Spotify music connect 
+      #TODO: Add later
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
-      SPOTIFY_REDIRECT_URI: http://127.0.0.1:5001/auth/callback
-      JWT_SECRET: ${JWT_SECRET}
+      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI}
     ports:
       - "5001:5001"
     depends_on:
