@@ -49,4 +49,10 @@ router.get("/google/callback", async (req, res) => {
   );
   const googleUser = await userResponse.json();
   console.log("Logged in:", googleUser.email);
+  
+  const appToken = jwt.sign(
+    {googleId: googleUser.id, email: googleUser.email},
+    process.env.JWT_SECRET,
+    {expiresIN: '7d'}
+  )
 });

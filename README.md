@@ -1,81 +1,85 @@
 # FlowState 🎵
 
-> A Spotify companion and mood journal. Play music in Spotify, log how you feel in FlowState — with the songs that soundtrack each moment.
+FlowState is a Spotify companion + mood journal. You play music in Spotify, then use FlowState to log how you felt and what was going on.
 
 ---
 
 ## Project Overview
 
-FlowState is a full-stack web application built on the MERN stack that runs **alongside Spotify** (like Last.fm). It does not replace Spotify for playback. Users **log in with Google**, optionally **connect Spotify** for music features, search for music, see what's currently playing, and write mood journal entries with optional song context.
+FlowState is a full-stack web app built with the MERN stack that runs **alongside Spotify** (not as a replacement player).  
+Users **log in with Google**, connect Spotify for music data, search for tracks, and create journal entries tied to mood + optional song context.
 
-**Product pitch:** Spotify shows what you played — FlowState captures *how you felt* and *why*, with the music attached.
+The goal is simple: Spotify tells me what I played, FlowState tracks how I felt.
 
 ### Auth architecture
 
 FlowState uses **two separate OAuth flows**:
 
-| Provider | Purpose | When |
-| -------- | ------- | ---- |
-| **Google** | App login — who you are | First visit — "Log in with Google" |
+| Provider    | Purpose                                       | When                                        |
+| ----------- | --------------------------------------------- | ------------------------------------------- |
+| **Google**  | App login — who you are                       | First visit — "Log in with Google"          |
 | **Spotify** | Music data — search, now playing, track links | After login — "Connect Spotify" in Settings |
 
-> **Why Google for login?** Spotify Developer Mode now requires a Premium subscription for OAuth. Google handles authentication; Spotify remains the music integration. This is **Google Cloud OAuth 2.0** (credentials from [Google Cloud Console](https://console.cloud.google.com/)) — not Firebase Auth.
+> **Why Google for login?** I do not have Spotify Premium, so app login is handled by Google OAuth. Spotify OAuth is still used for music data access.
 
 Sessions use a **JWT stored in an HTTP-only cookie** after Google login.
 
-### How it works
+### How it works (current scope)
 
 1. **Log in** with Google (OAuth 2.0)
-2. **Connect Spotify** (second OAuth — optional until you need music features)
-3. **Play music in Spotify** (desktop, mobile, or web)
-4. **Open FlowState** — see now playing, pick a mood, write a note
-5. **Add a song to your entry** from now playing or Search
-6. **Browse Timeline & Insights** — patterns, streaks, top tracks by mood
+2. **Connect Spotify** (second OAuth for music data access)
+3. **Search** artists, albums, and tracks
+4. **Open tracks in Spotify** from search results
+5. **Write a journal entry** with mood + note (+ optional song context)
 
 ---
 
 ## Features
 
-### Auth & accounts
+### Current class scope (what I am building now)
 
-- **Google OAuth 2.0** — App login via Google Cloud Console. User profile saved to MongoDB; session JWT issued in an HTTP-only cookie.
-- **Spotify OAuth 2.0** — Separate "Connect Spotify" flow for music API access (search, now playing). Tokens stored on the user record after Google login.
+- **Google OAuth 2.0 login** — App identity and session creation.
+- **JWT in HTTP-only cookie** — Persistent session and protected routes.
+- **Spotify OAuth 2.0 connection** — Separate connect flow for Spotify Web API access.
+- **Search** — Artists, albums, songs from Spotify Web API.
+- **No Results state** — Empty state when there is no query or no API results.
+- **Open in Spotify links** — Search results link out to Spotify.
+- **Journal entry (core)** — Mood + note with optional song context.
 
 ### Spotify features (requires Connect Spotify)
 
-- **Search** — Search artists, albums, and songs via the Spotify Web API. Results link to Spotify player URLs.
-- **No Results State** — Empty state when no query has been entered or the API returns nothing.
+- **Now Playing (stretch for class / likely in final submit)** — Pull from Spotify `currently-playing`.
 
-### Companion & journal
+### Post-class features (planned for September, barring setbacks)
 
-- **Now Playing** — Live-sync from Spotify (`currently-playing`). Open track in Spotify with one click.
-- **Add to Entry** — Attach the current track (or a song from Search) to a journal entry.
-- **Mood Selector** — Six moods with distinct visual identity: Rage, Focused, Sad, Hype, Faith, Chill.
-- **Journal Entries** — Mood + note + optional tags + optional Spotify track, saved to MongoDB.
-- **Timeline** — Browse past entries, filter by mood, open attached tracks in Spotify.
-- **Insights** — Entry counts, mood breakdown, peak journaling time, top tracks by mood, weekly summary card.
-- **Streak Tracker** — Consecutive days with at least one journal entry.
+These are still part of the product vision, but they are intentionally deferred so I can ship class requirements cleanly first.
 
-### Settings
-
-- Default mood, reflection prompts, now-playing sync toggle
+- Timeline filters and richer entry browsing
+- Insights dashboard (mood breakdown, top tracks, activity trends)
+- Streak tracker
 - Export entries (JSON)
-- Connect / reconnect Spotify, clear journal data
+- Reflection prompts / expanded settings
+- Mood-based playlist tools
+
+### Settings (current)
+
+- Connect / reconnect Spotify
+- Basic account/session controls
+
+### Settings (post-class)
+
+- Default mood preferences
+- Reflection prompts
+- Export entries
 
 ---
 
-## Pages
+## Pages (current scope)
 
-| Page | Description |
-| ---- | ----------- |
-| **Login** | Google OAuth gate — must log in before using the app |
-| **Today** | Now playing, mood picker, journal note, save entry |
-| **Search** | Artists, albums, songs — open in Spotify or add song to entry |
-| **Timeline** | Journal history with mood filters and streak |
-| **Insights** | Stats, mood breakdown, top tracks by mood |
-| **Settings** | Profile, journal prefs, account |
-
-> **Design mockup:** See `flowstate_full_mockup.html` in Downloads for the full UI reference.
+- **Login** — Google OAuth gate before app access.
+- **Today** — mood + note journal entry, optional song context.
+- **Search** — Spotify artist/album/song search with external links.
+- **Settings** — connect/reconnect Spotify and account basics.
 
 ---
 
@@ -83,10 +87,10 @@ Sessions use a **JWT stored in an HTTP-only cookie** after Google login.
 
 ### Software
 
-| Requirement | Version | Notes |
-| ----------- | ------- | ----- |
-| Docker | Latest | [Download Docker Desktop](https://www.docker.com/products/docker-desktop) |
-| Git | Latest | [Download here](https://git-scm.com) |
+| Requirement | Version | Notes                                                                     |
+| ----------- | ------- | ------------------------------------------------------------------------- |
+| Docker      | Latest  | [Download Docker Desktop](https://www.docker.com/products/docker-desktop) |
+| Git         | Latest  | [Download here](https://git-scm.com)                                      |
 
 ### Accounts & API Access
 
@@ -222,29 +226,23 @@ flowstate/
 
 ## Tech Stack
 
-| Layer | Technology |
-| ----- | ---------- |
-| Frontend | React 18, Vite, Tailwind CSS |
-| Backend | Node.js, Express.js |
-| Database | MongoDB, Mongoose |
-| Auth | Google OAuth 2.0 (login), Spotify OAuth 2.0 (music), JWT (HTTP-only cookie) |
-| Containerization | Docker, Docker Compose |
-| Third-Party API | Spotify Web API |
-| Deployment | Vercel (frontend), Heroku (backend) |
+- Frontend: React 18, Vite, Tailwind CSS
+- Backend: Node.js, Express
+- Database: MongoDB + Mongoose
+- Auth: Google OAuth (login), Spotify OAuth (music), JWT cookie session
+- API: Spotify Web API
+- Local dev: Docker + Docker Compose
 
 ---
 
-## API & OAuth flows
+## API & OAuth flows (current)
 
-| Feature | Provider | Flow |
-| ------- | -------- | ---- |
-| App login | Google | `GET /auth/google` → callback → JWT cookie |
-| Connect Spotify | Spotify | `GET /auth/spotify` → callback → tokens on user |
-| Search | Spotify Web API | `GET /search` (artists, albums, tracks) |
-| Now playing | Spotify Web API | `GET /me/player/currently-playing` |
-| Open in Spotify | — | External links to `open.spotify.com` |
+- App login: `GET /auth/google` -> callback -> JWT cookie
+- Connect Spotify: `GET /auth/spotify` -> callback -> save user tokens
+- Search: `GET /search` for artists/albums/tracks
+- Open in Spotify: external links to `open.spotify.com`
 
-FlowState is a **companion app** — playback happens in Spotify, not inside FlowState.
+FlowState is a companion app. Playback still happens in Spotify.
 
 ---
 
@@ -268,31 +266,37 @@ Frontend dev server: `http://127.0.0.1:5173`
 
 ---
 
-## Deployment
+## Deployment (later)
 
-- **Frontend:** [Vercel](https://vercel.com)
-- **Backend:** [Heroku](https://www.heroku.com)
-
-Add all `.env` variables to your hosting platform. **Do not commit `.env` to the repository.**
-
-Update redirect URIs in Google Cloud Console and Spotify Developer Dashboard to match your production backend URL.
+I am focusing on local/class delivery first.  
+Deployment setup will happen after the core app is stable.
 
 ---
 
-## Planned (v2)
+## Timeline & Roadmap
 
-- **Mood-based playlists** — Build Spotify playlists from songs you've logged on past entries for a given mood (e.g. all tracks from Rage entries → "Your Rage Soundtrack"). Uses your journal data, not AI recommendations. Triggered from Insights via a **Create playlist** action; creates or updates a playlist in Spotify through the Web API.
-- **Fallback if dev-mode limits apply** — Show a mood-based track list in FlowState with per-track **Open in Spotify** links if playlist creation endpoints are restricted.
+### By class deadline (current month)
+
+- Deliver stable auth + Spotify integration + search + no-results UX
+- Keep journal functionality as a core part of the app
+- Prioritize reliability over feature count
+
+### Post-class target (September, barring setbacks)
+
+- Expand analytics and insight views
+- Build richer timeline interactions
+- Add export / quality-of-life settings
+- Explore mood-based playlist workflows
 
 ---
 
 ## Portfolio Notes
 
-**Problem:** Spotify tracks listening history, not emotional context or intention.
+I built this because Spotify tracks what I listen to, but not how I felt while listening.
 
-**Solution:** A mood journal companion that ties entries to Spotify tracks — patterns from real behavior, not AI-generated playlists.
+FlowState is my way of combining both: music context + short mood journaling.
 
-**Differentiator:** Journal-first product with Google for identity, Spotify for music context (companion model, not a mood-AI recommender).
+I changed scope on purpose for class: ship auth/search/journal well first, then expand features after class instead of rushing everything in one month.
 
 ---
 
