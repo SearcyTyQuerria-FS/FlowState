@@ -1,19 +1,19 @@
-# FlowState 🎵
+# Played & Felt 🎵
 
-FlowState is a Spotify companion + mood journal. You play music in Spotify, then use FlowState to log how you felt and what was going on.
+Played & Felt is a Spotify companion + mood journal. You play music in Spotify, then use Played & Felt to log how you felt and what was going on.
 
 ---
 
 ## Project Overview
 
-FlowState is a full-stack web app built with the MERN stack that runs **alongside Spotify** (not as a replacement player).  
+Played & Felt is a full-stack web app built with the MERN stack that runs **alongside Spotify** (not as a replacement player).  
 Users **log in with Google**, connect Spotify for music data, search for tracks, and create journal entries tied to mood + optional song context.
 
-The goal is simple: Spotify tells me what I played, FlowState tracks how I felt.
+The goal is simple: Spotify tells me what I played, Played & Felt tracks how I felt.
 
 ### Auth architecture
 
-FlowState uses **two separate OAuth flows**:
+Played & Felt uses **two separate OAuth flows**:
 
 | Provider    | Purpose                                       | When                                        |
 | ----------- | --------------------------------------------- | ------------------------------------------- |
@@ -136,28 +136,28 @@ SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:5001/auth/spotify/callback
 ```
 
-> **Google credentials:**
->
-> 1. Go to [console.cloud.google.com](https://console.cloud.google.com/) → select your FlowState project
-> 2. APIs & Services → OAuth consent screen → configure (External, add test users)
-> 3. Credentials → Create OAuth client ID → Web application
-> 4. Authorized redirect URI: `http://127.0.0.1:5001/auth/google/callback`
-> 5. Copy Client ID and Client Secret into `.env`
+**Google credentials:**
 
-> **Spotify credentials** (for Connect Spotify later):
->
-> 1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
-> 2. Create an app (select **Web API**)
-> 3. Copy `Client ID` and `Client Secret`
-> 4. Set Redirect URI to `http://127.0.0.1:5001/auth/spotify/callback`
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/) → select your FlowState Google Cloud project
+2. APIs & Services → OAuth consent screen → configure (External, add test users)
+3. Credentials → Create OAuth client ID → Web application
+4. Authorized redirect URI: `http://127.0.0.1:5001/auth/google/callback`
+5. Copy Client ID and Client Secret into `.env`
 
-> **MongoDB URI:**
->
-> 1. Create a cluster on [MongoDB Atlas](https://www.mongodb.com/atlas)
-> 2. Connect → copy connection string
-> 3. Add to `.env`
+**Spotify credentials** (for Connect Spotify later):
 
-> **JWT secret:** Run `openssl rand -base64 32`
+1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
+2. Create an app (select **Web API**)
+3. Copy `Client ID` and `Client Secret`
+4. Set Redirect URI to `http://127.0.0.1:5001/auth/spotify/callback`
+
+**MongoDB URI:**
+
+1. Create a cluster on [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Connect → copy connection string
+3. Add to `.env`
+
+**JWT secret:** Run `openssl rand -base64 32`
 
 ### 3. Run with Docker
 
@@ -242,7 +242,7 @@ flowstate/
 - Search: `GET /search` for artists/albums/tracks
 - Open in Spotify: external links to `open.spotify.com`
 
-FlowState is a companion app. Playback still happens in Spotify.
+Played & Felt is a companion app. Playback still happens in Spotify.
 
 ---
 
@@ -294,7 +294,7 @@ Deployment setup will happen after the core app is stable.
 
 I built this because Spotify tracks what I listen to, but not how I felt while listening.
 
-FlowState is my way of combining both: music context + short mood journaling.
+Played & Felt is my way of combining both: music context + short mood journaling.
 
 I changed scope on purpose for class: ship auth/search/journal well first, then expand features after class instead of rushing everything in one month.
 
