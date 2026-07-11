@@ -1,27 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  --color-fs-bg: #0f0b06;
-  --color-fs-card: #1a1208;
-  --color-fs-hover: #2e1e08;
-  --color-fs-border: #3a2a14;
-  --color-fs-border-active: #6a4520;
-  --color-fs-text: #e8c98a;
-  --color-fs-text-secondary: #c4a870;
-  --color-fs-accent: #c4892a;
-  --color-fs-muted: #4a3020;
-  --color-fs-inactive: #5a4030;
+  /* pf = played & felt colors */
+  --color-pf-bg: #16120c;
+  --color-pf-card: #221a10;
+  --color-pf-hover: #2e1e08;
+  --color-pf-border: #3a2a14;
+  --color-pf-border-active: #6a4520;
+  --color-pf-text: #e8c98a;
+  --color-pf-text-secondary: #c4a870;
+  --color-pf-accent: #c4892a;
+  --color-pf-muted: #4a3020;
+  --color-pf-inactive: #5a4030;
 
-  /* Mood colors */
-  --color-fs-rage: #8b3a3a;
-  --color-fs-focus: #c4892a;
-  --color-fs-sad: #4a6fa5;
-  --color-fs-chill: #4a8a5a;
-  --color-fs-faith: #7a4a8a;
-  --color-fs-hype: #b8860b;
+  /* moods */
+  --color-pf-rage: #8b3a3a;
+  --color-pf-focus: #c4892a;
+  --color-pf-sad: #4a6fa5;
+  --color-pf-chill: #4a8a5a;
+  --color-pf-faith: #7a4a8a;
+  --color-pf-hype: #b8860b;
 
-  /* Utility */
-  --color-fs-positive: #7a9a4a;
-  --color-fs-spotify: #4aaa60;
-  --color-fs-danger: #8b3a3a;
+  --color-pf-positive: #7a9a4a;
+  --color-pf-spotify: #4aaa60;
+  --color-pf-danger: #8b3a3a;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

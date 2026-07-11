@@ -1,12 +1,27 @@
-export default function App() {
+import { Navigate, Route, Routes } from "react-router-dom";
+import AppLayout from "./components/AppLayout.jsx";
+import Login from "./pages/Login.jsx";
+import Search from "./pages/Search.jsx";
+import Today from "./pages/Today.jsx";
+import Settings from "./pages/Settings.jsx";
+import Timeline from "./pages/Timeline.jsx";
+import Insights from "./pages/Insights.jsx";
+
+function App() {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <header className="bg-gray-800 p-4">
-        <h1 className="text-3xl font-bold">Played & Felt 🎵</h1>
-      </header>
-      <main className="p-8">
-        <p className="text-lg">Welcome to Played & Felt. Connect with Spotify to get started.</p>
-      </main>
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<Login />} />
+
+      <Route element={<AppLayout />}>
+        <Route path="/search" element={<Search />} />
+        <Route path="/today" element={<Today />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/timeline" element={<Timeline />} />
+        <Route path="/insights" element={<Insights />} />
+      </Route>
+    </Routes>
   );
 }
+
+export default App;
