@@ -55,6 +55,8 @@ app.get("/api/me", authMiddleware, (req, res) => {
     email: req.user.email,
     name: req.user.name,
     googleId: req.user.googleId,
+    // dont send actual tokens to the frontend
+    spotifyConnected: Boolean(req.user.spotifyRefreshToken),
   });
 });
 

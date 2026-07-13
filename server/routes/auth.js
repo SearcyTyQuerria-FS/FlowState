@@ -1,13 +1,24 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
 
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
+
+const SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize";
+const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
+
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+// spotify needs basic auth for token requests
+function spotifyBasicAuthHeader() {
+  const raw = `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`;
+  return `Basic ${Buffer.from(raw).toString("base64")}`;
+}
 
 // route that sends user to google login page
 router.get("/google", (_req, res) => {
@@ -96,6 +107,87 @@ router.get("/google/callback", async (req, res) => {
 
   // send them back to the react app
   res.redirect(process.env.CLIENT_URL);
+});
+
+// must already be logged in with google before connecting spotify
+router.get("/spotify", authMiddleware, (req, res) => {
+  const params = new URLSearchParams({
+    client_id: process.env.SPOTIFY_CLIENT_ID,
+    response_type: "code",
+    redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+    // enough for search + now playing later
+    scope: [
+      "user-read-email",
+      "user-read-private",
+      "user-read-currently-playing",
+      "user-read-playback-state",
+    ].join(" "),
+    // state = our user id so we know who this callback belongs to
+    state: String(req.user._id),
+    show_dialog: "true",
+  });
+
+  res.redirect(`${SPOTIFY_AUTH_URL}?${params}`);
+});
+
+// spotify sends them back here after they approve the app
+router.get("/spotify/callback", authMiddleware, async (req, res) => {
+  console.log(">>> Spotify callback hit");
+  const { code, state, error } = req.query;
+
+  if (error) {
+    console.error("Spotify auth error:", error);
+    return res.status(400).json({ error: "Spotify login was cancelled or failed" });
+  }
+
+  if (!code) {
+    return res.status(400).json({ error: "No authorization code from Spotify" });
+  }
+
+  // make sure the state matches the logged in user
+  if (!state || state !== String(req.user._id)) {
+    return res.status(400).json({ error: "Invalid Spotify state" });
+  }
+
+  // trade code for access + refresh tokens
+  const tokenResponse = await fetch(SPOTIFY_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: spotifyBasicAuthHeader(),
+    },
+    body: new URLSearchParams({
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
+    }),
+  });
+
+  const tokenData = await tokenResponse.json();
+
+  if (!tokenResponse.ok) {
+    console.error("Spotify token error:", tokenData);
+    return res.status(500).json({ error: "Failed to get token from Spotify" });
+  }
+
+  const {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    expires_in: expiresIn,
+  } = tokenData;
+
+  // save tokens on the user in mongo
+  req.user.spotifyAccessToken = accessToken;
+  if (refreshToken) {
+    req.user.spotifyRefreshToken = refreshToken;
+  }
+  req.user.spotifyTokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
+  await req.user.save();
+
+  console.log(">>> Spotify connected for:", req.user.email);
+
+  // back to the app (settings page later, home for now)
+  res.redirect(`${process.env.CLIENT_URL}/settings`);
 });
 
 module.exports = router;
