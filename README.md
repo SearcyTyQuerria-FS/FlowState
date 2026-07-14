@@ -111,8 +111,8 @@ These are still part of the product vision, but they are intentionally deferred 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/flowstate.git
-cd flowstate
+git clone https://github.com/SearcyTyQuerria-FS/Played-Felt.git
+cd Played-Felt
 ```
 
 ### 2. Set Up Environment Variables
@@ -198,7 +198,7 @@ docker compose down
 ## Project Structure
 
 ```text
-flowstate/
+Played-Felt/
 ├── client/                 # React frontend (Vite + Tailwind CSS)
 │   ├── src/
 │   │   ├── components/     # Reusable UI components
