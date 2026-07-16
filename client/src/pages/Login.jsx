@@ -1,11 +1,44 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL = "http://localhost:5001";
+
+// TODO (week 4): polish login card spacing and button hover states
 function Login() {
   const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkLogin() {
+      try {
+        const res = await fetch(`${API_URL}/api/me`, {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          navigate("/search", { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    checkLogin();
+  }, [navigate]);
 
   function handleGoogleLogin() {
-    // TODO: google oauth later. for now just go to search
-    navigate("/search");
+    window.location.href = `${API_URL}/auth/google`;
+  }
+
+  if (checking) {
+    return (
+      <main className="min-h-screen bg-pf-bg text-pf-text flex items-center justify-center p-6">
+        <p className="text-sm text-pf-text-secondary">Checking login...</p>
+      </main>
+    );
   }
 
   return (

@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
     },
-    // filled in after /auth/spotify connect flow
+    // spotify tokens get saved here after i connect in settings
     spotifyAccessToken: String,
     spotifyRefreshToken: String,
     spotifyTokenExpiresAt: Date,

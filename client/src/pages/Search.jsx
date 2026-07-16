@@ -45,7 +45,8 @@ function Search() {
       return;
     }
 
-    // temporary fake results until I hook up Spotify
+    // temporary fake results until i wire this to /api/search
+    // TODO (week 4): replace fake data with real Spotify search from my backend
     setResults(FAKE_RESULTS);
     setHasSearched(true);
   }

@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// checks jwt cookie and attaches user to the request
+// checks my jwt cookie before protected routes run
 const authMiddleware = async (req, res, next) => {
   const token = req.cookies.token;
 

@@ -6,6 +6,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
+const spotifyRoutes = require("./routes/spotify");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
@@ -22,13 +23,14 @@ app.use(cookieParser());
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/api", spotifyRoutes);
 
-// quick check that the api is up
+// health check so i know the api is up
 app.get("/", (_req, res) => {
   res.json({ message: "Played & Felt API is running" });
 });
 
-// checks env vars loaded without leaking secrets
+// shows which env vars loaded without printing the actual secrets
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
@@ -48,15 +50,18 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// returns logged-in user info  proves auth + db persistence
+// returns my account info, also shows if spotify is connected
 app.get("/api/me", authMiddleware, (req, res) => {
+  const spotifyConnected = Boolean(req.user.spotifyRefreshToken);
+
   res.json({
     id: req.user._id,
     email: req.user.email,
     name: req.user.name,
     googleId: req.user.googleId,
-    // dont send actual tokens to the frontend
-    spotifyConnected: Boolean(req.user.spotifyRefreshToken),
+    // keep spotify tokens on the server only
+    spotifyConnected,
+    needsSpotifyAuth: !spotifyConnected,
   });
 });
 

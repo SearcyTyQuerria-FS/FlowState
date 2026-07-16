@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 
+// TODO (week 4): polish nav active styles, maybe add logout in the sidebar
 function AppLayout() {
   const linkClass = ({ isActive }) =>
     `block rounded-xl px-3 py-2 text-sm transition ${

@@ -5,12 +5,22 @@ function spotifyBasicAuthHeader() {
   return `Basic ${Buffer.from(raw).toString("base64")}`;
 }
 
-// returns a usable spotify access token for this user
-// refreshes it if it's expired / about to expire
+// spotify sometimes sends plain text errors, so i handle both
+async function readSpotifyBody(response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+// if my access token expired, use the refresh token before calling the api
 async function getValidSpotifyToken(user) {
   if (!user.spotifyAccessToken || !user.spotifyRefreshToken) {
     const err = new Error("Spotify not connected");
     err.status = 400;
+    err.needsSpotifyAuth = true;
     throw err;
   }
 
@@ -18,7 +28,7 @@ async function getValidSpotifyToken(user) {
     ? new Date(user.spotifyTokenExpiresAt).getTime()
     : 0;
 
-  // still valid for at least another minute
+  // still good for another minute, so no need to refresh yet
   if (expiresAt > Date.now() + 60 * 1000) {
     return user.spotifyAccessToken;
   }
@@ -35,12 +45,18 @@ async function getValidSpotifyToken(user) {
     }),
   });
 
-  const tokenData = await tokenResponse.json();
+  const tokenData = await readSpotifyBody(tokenResponse);
 
   if (!tokenResponse.ok) {
     console.error("Spotify refresh error:", tokenData);
-    const err = new Error("Failed to refresh Spotify token");
-    err.status = 500;
+
+    const err = new Error(
+      tokenData.error === "invalid_client"
+        ? "Spotify client id/secret in .env do not match my developer app"
+        : "Failed to refresh Spotify token, reconnect Spotify in Settings",
+    );
+    err.status = 401;
+    err.needsSpotifyAuth = true;
     throw err;
   }
 
@@ -57,4 +73,5 @@ async function getValidSpotifyToken(user) {
 
 module.exports = {
   getValidSpotifyToken,
+  readSpotifyBody,
 };

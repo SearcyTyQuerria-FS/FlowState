@@ -14,37 +14,47 @@ const SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-// spotify needs basic auth for token requests
+// spotify wants client id + secret base64 encoded
 function spotifyBasicAuthHeader() {
   const raw = `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`;
   return `Basic ${Buffer.from(raw).toString("base64")}`;
 }
 
-// route that sends user to google login page
+// i stuck with google for app login since i already built this flow, spotify is just for music data
 router.get("/google", (_req, res) => {
-  // grabbing the params google needs for the auth url
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: process.env.GOOGLE_REDIRECT_URI,
     response_type: "code",
     scope: "openid email profile",
+    prompt: "select_account", // lets me pick which google account
   });
 
-  // build the url then send the browser to google
   res.redirect(`${GOOGLE_AUTH_URL}?${params}`);
 });
 
-// google sends the user back here after they log in
+// clears the jwt cookie when i want to switch accounts
+router.post("/logout", (_req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/",
+  });
+
+  res.json({ ok: true });
+});
+
+// google sends me back here with a code, i trade it for user info then save to mongo
 router.get("/google/callback", async (req, res) => {
   console.log(">>> Google callback hit");
   const { code } = req.query;
 
-  // no code means something went wrong or user cancelled
   if (!code) {
     return res.status(400).json({ error: "No authorization code from Google" });
   }
 
-  // trade the code for an access token
+  // step 1: trade code for google access token
   const tokenResponse = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -66,7 +76,7 @@ router.get("/google/callback", async (req, res) => {
 
   const { access_token: accessToken } = tokenData;
 
-  // use the access token to get user info (email, name, etc)
+  // step 2: use that token to get my email / name
   const userResponse = await fetch(GOOGLE_USERINFO_URL, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -80,7 +90,7 @@ router.get("/google/callback", async (req, res) => {
 
   const { id: googleId, email, name } = googleUser;
 
-  // save user if new, update if they already logged in before
+  // step 3: save me in the db, or update if i logged in before
   const user = await User.findOneAndUpdate(
     { googleId },
     { googleId, email, name },
@@ -89,14 +99,13 @@ router.get("/google/callback", async (req, res) => {
 
   console.log(">>> Logged in:", user.email);
 
-  // jwt uses db id so protected routes can load the user later
+  // step 4: jwt in a cookie = my app session, keeps secrets out of frontend js
   const appToken = jwt.sign(
     { userId: user._id, googleId: user.googleId, email: user.email },
     process.env.JWT_SECRET,
     { expiresIn: "7d" },
   );
 
-  // http-only cookie keeps the token out of frontend js
   res.cookie("token", appToken, {
     httpOnly: true,
     sameSite: "lax",
@@ -105,24 +114,24 @@ router.get("/google/callback", async (req, res) => {
     maxAge: SEVEN_DAYS_MS,
   });
 
-  // send them back to the react app
-  res.redirect(process.env.CLIENT_URL);
+  // land in search after login instead of the login page again
+  res.redirect(`${process.env.CLIENT_URL}/search`);
 });
 
-// must already be logged in with google before connecting spotify
+// separate spotify connect: only for music data, not app login
 router.get("/spotify", authMiddleware, (req, res) => {
   const params = new URLSearchParams({
     client_id: process.env.SPOTIFY_CLIENT_ID,
     response_type: "code",
     redirect_uri: process.env.SPOTIFY_REDIRECT_URI,
-    // enough for search + now playing later
+    // scopes for search + now playing later
     scope: [
       "user-read-email",
       "user-read-private",
       "user-read-currently-playing",
       "user-read-playback-state",
     ].join(" "),
-    // state = our user id so we know who this callback belongs to
+    // state = my user id so callback knows who to save tokens on
     state: String(req.user._id),
     show_dialog: "true",
   });
@@ -130,8 +139,8 @@ router.get("/spotify", authMiddleware, (req, res) => {
   res.redirect(`${SPOTIFY_AUTH_URL}?${params}`);
 });
 
-// spotify sends them back here after they approve the app
-router.get("/spotify/callback", authMiddleware, async (req, res) => {
+// spotify callback: look up user from state, cookie was breaking with localhost vs 127.0.0.1
+router.get("/spotify/callback", async (req, res) => {
   console.log(">>> Spotify callback hit");
   const { code, state, error } = req.query;
 
@@ -140,12 +149,12 @@ router.get("/spotify/callback", authMiddleware, async (req, res) => {
     return res.status(400).json({ error: "Spotify login was cancelled or failed" });
   }
 
-  if (!code) {
-    return res.status(400).json({ error: "No authorization code from Spotify" });
+  if (!code || !state) {
+    return res.status(400).json({ error: "Missing code or state from Spotify" });
   }
 
-  // make sure the state matches the logged in user
-  if (!state || state !== String(req.user._id)) {
+  const user = await User.findById(state);
+  if (!user) {
     return res.status(400).json({ error: "Invalid Spotify state" });
   }
 
@@ -176,17 +185,16 @@ router.get("/spotify/callback", authMiddleware, async (req, res) => {
     expires_in: expiresIn,
   } = tokenData;
 
-  // save tokens on the user in mongo
-  req.user.spotifyAccessToken = accessToken;
+  // store tokens on my user so search can use them later
+  user.spotifyAccessToken = accessToken;
   if (refreshToken) {
-    req.user.spotifyRefreshToken = refreshToken;
+    user.spotifyRefreshToken = refreshToken;
   }
-  req.user.spotifyTokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
-  await req.user.save();
+  user.spotifyTokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
+  await user.save();
 
-  console.log(">>> Spotify connected for:", req.user.email);
+  console.log(">>> Spotify connected for:", user.email);
 
-  // back to the app (settings page later, home for now)
   res.redirect(`${process.env.CLIENT_URL}/settings`);
 });
 
