@@ -114,8 +114,8 @@ router.get("/google/callback", async (req, res) => {
     maxAge: SEVEN_DAYS_MS,
   });
 
-  // land in search after login instead of the login page again
-  res.redirect(`${process.env.CLIENT_URL}/search`);
+  // land on Today after login — that's the journal home
+  res.redirect(`${process.env.CLIENT_URL}/today`);
 });
 
 // separate spotify connect: only for music data, not app login

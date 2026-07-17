@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:5001";
 
-// TODO (week 4): polish login card spacing and button hover states
 function Login() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
@@ -16,7 +15,7 @@ function Login() {
         });
 
         if (res.ok) {
-          navigate("/search", { replace: true });
+          navigate("/today", { replace: true });
           return;
         }
       } catch (err) {
@@ -43,7 +42,10 @@ function Login() {
 
   return (
     <main className="min-h-screen bg-pf-bg text-pf-text flex items-center justify-center p-6">
-      <section className="w-full max-w-md border border-pf-border bg-pf-card rounded-2xl p-8 text-center">
+      <section
+        aria-labelledby="login-heading"
+        className="w-full max-w-md border border-pf-border bg-pf-card rounded-2xl p-8 text-center"
+      >
         <header className="mb-6">
           <p className="text-sm text-pf-text-secondary mb-2">
             Spotify companion + mood journal
@@ -59,7 +61,7 @@ function Login() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full rounded-xl bg-[#ead4ad] text-[#1a1208] font-semibold py-3 px-4 hover:opacity-90 transition"
+          className="w-full rounded-xl bg-[#ead4ad] text-[#1a1208] font-semibold py-3 px-4 transition hover:opacity-90"
         >
           Continue with Google
         </button>

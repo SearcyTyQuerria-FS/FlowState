@@ -1,60 +1,96 @@
 import { useState } from "react";
-import brentArtistImg from "../assets/brent-faiyaz-artist.jpg";
-import brentAlbumImg from "../assets/brent-faiyaz-album.jpg";
-import brentTrackImg from "../assets/brent-faiyaz-track.jpg";
+import { Link, useNavigate } from "react-router-dom";
 
-const FAKE_RESULTS = [
-  {
-    id: "1",
-    type: "Artist",
-    title: "Brent Faiyaz",
-    subtitle: "Artist",
-    url: "https://open.spotify.com/artist/3tlXnStJ1fFhdScmQeLpuG",
-    image: brentArtistImg,
-  },
-  {
-    id: "2",
-    type: "Album",
-    title: "Icon",
-    subtitle: "Album · Brent Faiyaz",
-    url: "https://open.spotify.com/album/7oBZ821DTjUc2Ky2fV6l6Q",
-    image: brentAlbumImg,
-  },
-  {
-    id: "3",
-    type: "Song",
-    title: "have to.",
-    subtitle: "Song · Brent Faiyaz",
-    url: "https://open.spotify.com/track/7GApeoo08HHJ70980XyPZz",
-    image: brentTrackImg,
-  },
-];
+const API_URL = "http://localhost:5001";
+
+function trackFromSearchItem(item) {
+  if (!item || item.type !== "Song") return null;
+
+  // Search cards use "Song · Artist Name"
+  const parts = (item.subtitle || "").split("·");
+  const artist = parts.length > 1 ? parts.slice(1).join("·").trim() : "";
+
+  return {
+    spotifyId: item.id,
+    name: item.title,
+    artist,
+    url: item.url,
+    image: item.image || null,
+  };
+}
 
 function Search() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [needsSpotify, setNeedsSpotify] = useState(false);
 
-  function handleSearch(event) {
+  function handleAddToToday(item) {
+    const track = trackFromSearchItem(item);
+    if (!track) return;
+    // hand the song off to Today through navigate state
+    navigate("/today", { state: { track } });
+  }
+
+  async function handleSearch(event) {
     event.preventDefault();
 
     const trimmed = query.trim();
+    setError("");
+    setNeedsSpotify(false);
+    setHasSearched(true);
+
     if (!trimmed) {
       setResults([]);
-      setHasSearched(true);
       return;
     }
 
-    // temporary fake results until i wire this to /api/search
-    // TODO (week 4): replace fake data with real Spotify search from my backend
-    setResults(FAKE_RESULTS);
-    setHasSearched(true);
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams({ q: trimmed });
+      const res = await fetch(`${API_URL}/api/search?${params}`, {
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.needsSpotifyAuth) {
+          setNeedsSpotify(true);
+          setError("connect spotify in settings first — search needs it");
+        } else if (res.status === 401) {
+          setError("not logged in — go log in with google first");
+        } else {
+          setError(data.error || "search failed");
+        }
+        setResults([]);
+        return;
+      }
+
+      setResults(data.results || []);
+    } catch (err) {
+      console.error(err);
+      setError("could not reach the api");
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  const showIdle = !hasSearched && !loading;
+  const showEmpty = hasSearched && !loading && results.length === 0 && !error;
+
   return (
-    <section aria-labelledby="search-heading">
-      <header className="mb-6">
-        <h1 id="search-heading" className="text-3xl font-bold text-pf-text">
+    <section aria-labelledby="search-heading" className="mx-auto max-w-3xl">
+      <header className="mb-6 sm:mb-8">
+        <h1
+          id="search-heading"
+          className="text-2xl font-bold text-pf-text sm:text-3xl"
+        >
           Search
         </h1>
         <p className="mt-2 text-sm text-pf-text-secondary">
@@ -66,61 +102,125 @@ function Search() {
         <label htmlFor="search-input" className="sr-only">
           Search Spotify
         </label>
-        <div className="flex items-center gap-3 rounded-xl border border-pf-border bg-pf-card px-4 py-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-pf-border bg-pf-card p-3 sm:flex-row sm:items-center sm:px-4 sm:py-3">
           <input
             id="search-input"
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search for artist, album, or song..."
-            className="w-full bg-transparent text-pf-text outline-none placeholder:text-pf-inactive"
+            className="w-full bg-transparent px-1 py-1 text-pf-text outline-none placeholder:text-pf-inactive"
           />
           <button
             type="submit"
-            className="rounded-lg border border-pf-border-active bg-pf-hover px-3 py-1.5 text-sm font-medium text-pf-text hover:opacity-90"
+            disabled={loading}
+            className="w-full rounded-lg border border-pf-border-active bg-pf-hover px-3 py-2 text-sm font-medium text-pf-text hover:opacity-90 disabled:opacity-60 sm:w-auto sm:py-1.5"
           >
-            Search
+            {loading ? "Searching..." : "Search"}
           </button>
         </div>
       </form>
 
-      {!hasSearched || results.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-pf-border bg-pf-card px-6 py-16 text-center">
-          <h2 className="text-xl font-semibold text-pf-text">No Results</h2>
-          <p className="mt-2 text-sm text-pf-text-secondary">
-            {hasSearched
-              ? "Try a different search term."
-              : "Type a search query to get started."}
+      {error && (
+        <p className="mb-4 rounded-lg border border-pf-danger/40 bg-pf-card px-3 py-2 text-sm text-pf-danger">
+          {error}
+          {needsSpotify && (
+            <>
+              {" "}
+              <Link to="/settings" className="text-pf-accent hover:underline">
+                Open Settings
+              </Link>
+            </>
+          )}
+        </p>
+      )}
+
+      {loading && (
+        <div className="rounded-xl border border-dashed border-pf-border bg-pf-card px-6 py-12 text-center">
+          <p className="text-sm text-pf-text-secondary">Searching Spotify...</p>
+        </div>
+      )}
+
+      {showIdle && (
+        <div className="rounded-xl border border-dashed border-pf-border bg-pf-card px-6 py-12 text-center sm:py-16">
+          <p className="mb-3 text-3xl text-pf-inactive" aria-hidden="true">
+            ♪
+          </p>
+          <h2 className="text-lg font-semibold text-pf-text sm:text-xl">
+            Start a search
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-pf-text-secondary leading-relaxed">
+            Type an artist, album, or song. Results open in Spotify or can be
+            added to today&apos;s journal entry.
           </p>
         </div>
-      ) : (
+      )}
+
+      {showEmpty && (
+        <div className="rounded-xl border border-dashed border-pf-border bg-pf-card px-6 py-12 text-center sm:py-16">
+          <h2 className="text-lg font-semibold text-pf-text sm:text-xl">
+            No Results
+          </h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-pf-text-secondary leading-relaxed">
+            Nothing matched that query. Try a different spelling or a shorter
+            search term.
+          </p>
+        </div>
+      )}
+
+      {!loading && results.length > 0 && (
         <ul className="space-y-3">
           {results.map((item) => (
             <li
-              key={item.id}
-              className="flex items-center gap-4 rounded-xl border border-pf-border bg-pf-card p-4"
+              key={`${item.type}-${item.id}`}
+              className="flex flex-col gap-3 rounded-xl border border-pf-border bg-pf-card p-4 sm:flex-row sm:items-center sm:gap-4"
             >
-              <img
-                src={item.image}
-                alt=""
-                className="h-12 w-12 shrink-0 rounded-lg object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium text-pf-text">
-                  {item.title}
-                </p>
-                <p className="truncate text-sm text-pf-text-secondary">
-                  {item.subtitle}
-                </p>
+              <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt=""
+                    className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                  />
+                ) : (
+                  <p
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-pf-hover text-pf-accent"
+                    aria-hidden="true"
+                  >
+                    ♪
+                  </p>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-pf-text">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-sm text-pf-text-secondary">
+                    {item.subtitle}
+                  </p>
+                </div>
               </div>
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
-              >
-                Open in Spotify
-              </a>
+
+              <div className="flex flex-wrap gap-2 sm:shrink-0 sm:justify-end">
+                {item.type === "Song" && (
+                  <button
+                    type="button"
+                    onClick={() => handleAddToToday(item)}
+                    className="rounded-lg border border-pf-border-active bg-pf-hover px-3 py-1.5 text-sm text-pf-text hover:opacity-90"
+                  >
+                    Add to Today
+                  </button>
+                )}
+                {item.url && (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
+                  >
+                    Open in Spotify
+                  </a>
+                )}
+              </div>
             </li>
           ))}
         </ul>

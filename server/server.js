@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const spotifyRoutes = require("./routes/spotify");
+const entryRoutes = require("./routes/entries");
 const authMiddleware = require("./middleware/auth");
 
 const app = express();
@@ -24,6 +25,7 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 app.use("/api", spotifyRoutes);
+app.use("/api/entries", entryRoutes);
 
 // health check so i know the api is up
 app.get("/", (_req, res) => {

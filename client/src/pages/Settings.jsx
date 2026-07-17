@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = "http://localhost:5001";
 
 function Settings() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -38,13 +41,37 @@ function Settings() {
     window.location.href = `${API_URL}/auth/spotify`;
   }
 
-  // TODO (week 4): add a logout button that hits /auth/logout
-  // TODO (week 4): polish account cards and connected/not connected states
+  async function handleLogout() {
+    setError("");
+    setLoggingOut(true);
+
+    try {
+      const res = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setError("could not log out");
+        return;
+      }
+
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError("could not reach the api");
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
-    <section aria-labelledby="settings-heading">
-      <header className="mb-6">
-        <h1 id="settings-heading" className="text-3xl font-bold text-pf-text">
+    <section aria-labelledby="settings-heading" className="mx-auto max-w-3xl">
+      <header className="mb-6 sm:mb-8">
+        <h1
+          id="settings-heading"
+          className="text-2xl font-bold text-pf-text sm:text-3xl"
+        >
           Settings
         </h1>
         <p className="mt-2 text-sm text-pf-text-secondary">
@@ -74,6 +101,15 @@ function Settings() {
                 <dd className="text-pf-spotify">Connected</dd>
               </div>
             </dl>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="mt-4 rounded-lg border border-pf-border px-3 py-1.5 text-sm text-pf-text-secondary hover:border-pf-danger hover:text-pf-danger disabled:opacity-60"
+            >
+              {loggingOut ? "Logging out..." : "Log out"}
+            </button>
           </article>
 
           <article className="rounded-xl border border-pf-border bg-pf-card p-4">
@@ -86,20 +122,32 @@ function Settings() {
                 <p className="font-medium text-pf-text">Spotify</p>
                 <p className="text-sm text-pf-text-secondary">
                   {user.spotifyConnected
-                    ? "Connected — used for search and music data"
-                    : "Not connected yet"}
+                    ? "Connected — used for search, now playing, and music data"
+                    : "Not connected yet — needed for search and now playing"}
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleConnectSpotify}
-                className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
-              >
-                {user.spotifyConnected
-                  ? "Reconnect Spotify"
-                  : "Connect Spotify"}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <p
+                  className={`rounded-lg border px-2.5 py-1 text-xs ${
+                    user.spotifyConnected
+                      ? "border-pf-spotify bg-[#0d3a1a] text-pf-spotify"
+                      : "border-pf-border bg-pf-bg text-pf-text-secondary"
+                  }`}
+                >
+                  {user.spotifyConnected ? "Connected" : "Not connected"}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleConnectSpotify}
+                  className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
+                >
+                  {user.spotifyConnected
+                    ? "Reconnect Spotify"
+                    : "Connect Spotify"}
+                </button>
+              </div>
             </div>
           </article>
         </>

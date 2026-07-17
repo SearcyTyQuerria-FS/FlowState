@@ -107,4 +107,76 @@ router.get("/search", authMiddleware, requireSpotify, async (req, res) => {
   }
 });
 
+// stretch: whats playing right now in spotify (204 from spotify = nothing playing)
+router.get(
+  "/currently-playing",
+  authMiddleware,
+  requireSpotify,
+  async (req, res) => {
+    try {
+      const accessToken = await getValidSpotifyToken(req.user);
+
+      const spotifyRes = await fetch(
+        "https://api.spotify.com/v1/me/player/currently-playing",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      // nothing is playing / no active device
+      if (spotifyRes.status === 204) {
+        return res.json({
+          isPlaying: false,
+          track: null,
+          message: "Nothing playing right now",
+        });
+      }
+
+      const data = await readSpotifyBody(spotifyRes);
+
+      if (!spotifyRes.ok) {
+        console.error("Currently playing error:", data);
+        return res.status(spotifyRes.status).json({
+          error: "Could not get currently playing track",
+          details: data,
+          needsSpotifyAuth:
+            spotifyRes.status === 401 || spotifyRes.status === 403,
+        });
+      }
+
+      const item = data.item;
+
+      // podcasts / ads sometimes show up without a normal track shape
+      if (!item || data.currently_playing_type !== "track") {
+        return res.json({
+          isPlaying: Boolean(data.is_playing),
+          track: null,
+          message: "Nothing playing right now",
+        });
+      }
+
+      res.json({
+        isPlaying: Boolean(data.is_playing),
+        track: {
+          spotifyId: item.id,
+          name: item.name,
+          artist: (item.artists || []).map((a) => a.name).join(", "),
+          url: item.external_urls?.spotify || null,
+          image: item.album?.images?.[0]?.url || null,
+        },
+      });
+    } catch (err) {
+      console.error("Currently playing route error:", err.message);
+
+      const status = err.status || 500;
+      return res.status(status).json({
+        error: err.message || "Could not get currently playing track",
+        needsSpotifyAuth: Boolean(err.needsSpotifyAuth),
+      });
+    }
+  },
+);
+
 module.exports = router;
