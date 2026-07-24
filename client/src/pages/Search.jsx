@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 function trackFromSearchItem(item) {
   if (!item || item.type !== "Song") return null;
@@ -176,7 +175,30 @@ function Search() {
               className="flex flex-col gap-3 rounded-xl border border-pf-border bg-pf-card p-4 sm:flex-row sm:items-center sm:gap-4"
             >
               <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-                {item.image ? (
+                {item.url ? (
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0"
+                    aria-label={`open ${item.title} in spotify`}
+                  >
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="h-12 w-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <p
+                        className="flex h-12 w-12 items-center justify-center rounded-lg bg-pf-hover text-pf-accent"
+                        aria-hidden="true"
+                      >
+                        ♪
+                      </p>
+                    )}
+                  </a>
+                ) : item.image ? (
                   <img
                     src={item.image}
                     alt=""
@@ -215,7 +237,7 @@ function Search() {
                     href={item.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
+                    className="rounded-lg border border-pf-spotify bg-pf-spotify-bg px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
                   >
                     Open in Spotify
                   </a>

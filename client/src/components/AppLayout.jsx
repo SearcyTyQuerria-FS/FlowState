@@ -1,6 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 function AppLayout() {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen bg-pf-bg text-pf-text md:grid md:grid-cols-[240px_1fr]">
-      <aside className="flex flex-col border-b border-pf-border bg-[#120e09] p-4 md:border-b-0 md:border-r">
+      <aside className="flex flex-col border-b border-pf-border bg-pf-sidebar p-4 md:border-b-0 md:border-r">
         <header className="mb-4 px-2 md:mb-6">
           <p className="text-lg font-bold text-pf-text">Played &amp; Felt</p>
           <p className="mt-1 text-xs text-pf-inactive">
@@ -36,29 +35,29 @@ function AppLayout() {
         </header>
 
         <nav aria-label="Main">
-          {/* wraps on phone, stacks on desktop */}
-          <ul className="flex flex-wrap gap-1 md:flex-col md:space-y-1 md:gap-0">
-            <li>
+          {/* scrolls sideways on phone instead of wrapping to multiple rows, stacks on desktop */}
+          <ul className="flex gap-1 overflow-x-auto pb-1 md:flex-col md:space-y-1 md:gap-0 md:overflow-visible md:pb-0">
+            <li className="shrink-0">
               <NavLink to="/today" className={linkClass}>
                 Today
               </NavLink>
             </li>
-            <li>
+            <li className="shrink-0">
               <NavLink to="/search" className={linkClass}>
                 Search
               </NavLink>
             </li>
-            <li>
+            <li className="shrink-0">
               <NavLink to="/timeline" className={linkClass}>
                 Timeline
               </NavLink>
             </li>
-            <li>
+            <li className="shrink-0">
               <NavLink to="/insights" className={linkClass}>
                 Insights
               </NavLink>
             </li>
-            <li>
+            <li className="shrink-0">
               <NavLink to="/settings" className={linkClass}>
                 Settings
               </NavLink>

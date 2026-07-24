@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 function Login() {
   const navigate = useNavigate();
@@ -61,7 +60,7 @@ function Login() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full rounded-xl bg-[#ead4ad] text-[#1a1208] font-semibold py-3 px-4 transition hover:opacity-90"
+          className="w-full rounded-xl bg-pf-login-btn text-pf-login-btn-text font-semibold py-3 px-4 transition hover:opacity-90"
         >
           Continue with Google
         </button>

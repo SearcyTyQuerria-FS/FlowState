@@ -23,7 +23,13 @@
 
   --color-pf-positive: #7a9a4a;
   --color-pf-spotify: #4aaa60;
+  --color-pf-spotify-bg: #0d3a1a;
   --color-pf-danger: #8b3a3a;
+
+  /* one-off colors that were hardcoded around the app, pulled into the theme */
+  --color-pf-sidebar: #120e09;
+  --color-pf-login-btn: #ead4ad;
+  --color-pf-login-btn-text: #1a1208;
 }
 
 .sr-only {

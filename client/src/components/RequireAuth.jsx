@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 // keeps /today /search /settings behind google login
 function RequireAuth() {

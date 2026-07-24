@@ -15,24 +15,14 @@ async function readSpotifyBody(response) {
   }
 }
 
-// if my access token expired, use the refresh token before calling the api
-async function getValidSpotifyToken(user) {
-  if (!user.spotifyAccessToken || !user.spotifyRefreshToken) {
-    const err = new Error("Spotify not connected");
-    err.status = 400;
-    err.needsSpotifyAuth = true;
-    throw err;
-  }
+// tracks refreshes in progress per user. if two requests both hit an
+// expired token at the same time (today.jsx fires a couple api calls at
+// once), this stops them from both hitting spotify's refresh endpoint and
+// racing to save() last
+const refreshesInFlight = new Map();
 
-  const expiresAt = user.spotifyTokenExpiresAt
-    ? new Date(user.spotifyTokenExpiresAt).getTime()
-    : 0;
-
-  // still good for another minute, so no need to refresh yet
-  if (expiresAt > Date.now() + 60 * 1000) {
-    return user.spotifyAccessToken;
-  }
-
+// actual network call + save, split out so getValidSpotifyToken can dedupe it
+async function refreshSpotifyToken(user) {
   const tokenResponse = await fetch(SPOTIFY_TOKEN_URL, {
     method: "POST",
     headers: {
@@ -60,15 +50,56 @@ async function getValidSpotifyToken(user) {
     throw err;
   }
 
+  // fall back to spotify's normal 1hr if expires_in ever comes back weird,
+  // instead of saving an invalid date
+  const expiresInSeconds = Number.isFinite(tokenData.expires_in)
+    ? tokenData.expires_in
+    : 3600;
+
   user.spotifyAccessToken = tokenData.access_token;
   // spotify only sends a new refresh token sometimes
   if (tokenData.refresh_token) {
     user.spotifyRefreshToken = tokenData.refresh_token;
   }
-  user.spotifyTokenExpiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+  user.spotifyTokenExpiresAt = new Date(Date.now() + expiresInSeconds * 1000);
   await user.save();
 
   return user.spotifyAccessToken;
+}
+
+// if my access token expired, use the refresh token before calling the api
+async function getValidSpotifyToken(user) {
+  if (!user.spotifyAccessToken || !user.spotifyRefreshToken) {
+    const err = new Error("Spotify not connected");
+    err.status = 400;
+    err.needsSpotifyAuth = true;
+    throw err;
+  }
+
+  const expiresAt = user.spotifyTokenExpiresAt
+    ? new Date(user.spotifyTokenExpiresAt).getTime()
+    : 0;
+
+  // still good for another minute, so no need to refresh yet
+  if (Number.isFinite(expiresAt) && expiresAt > Date.now() + 60 * 1000) {
+    return user.spotifyAccessToken;
+  }
+
+  const userId = String(user._id);
+
+  // someone's already refreshing this user, just wait on that instead of
+  // hitting spotify twice
+  if (refreshesInFlight.has(userId)) {
+    return refreshesInFlight.get(userId);
+  }
+
+  const refreshPromise = refreshSpotifyToken(user).finally(() => {
+    refreshesInFlight.delete(userId);
+  });
+
+  refreshesInFlight.set(userId, refreshPromise);
+
+  return refreshPromise;
 }
 
 module.exports = {

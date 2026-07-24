@@ -7,6 +7,7 @@ import Today from "./pages/Today.jsx";
 import Settings from "./pages/Settings.jsx";
 import Timeline from "./pages/Timeline.jsx";
 import Insights from "./pages/Insights.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
 function App() {
   return (
@@ -23,6 +24,8 @@ function App() {
           <Route path="/insights" element={<Insights />} />
         </Route>
       </Route>
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

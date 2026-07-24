@@ -44,6 +44,7 @@ app.get("/api/health", (_req, res) => {
       googleClientSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET),
       googleRedirectUri: Boolean(process.env.GOOGLE_REDIRECT_URI),
       jwtSecret: Boolean(process.env.JWT_SECRET),
+      tokenEncryptionKey: Boolean(process.env.TOKEN_ENCRYPTION_KEY),
       mongoUri: Boolean(process.env.MONGO_URI),
       spotifyClientId: Boolean(process.env.SPOTIFY_CLIENT_ID),
       spotifyClientSecret: Boolean(process.env.SPOTIFY_CLIENT_SECRET),

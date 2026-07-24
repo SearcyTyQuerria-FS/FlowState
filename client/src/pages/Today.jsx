@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 const MOODS = [
   { name: "Rage", emoji: "🔥", color: "bg-pf-rage" },
@@ -253,7 +252,7 @@ function Today() {
         <p
           className={`w-fit rounded-lg border px-3 py-1.5 text-xs ${
             spotifyConnected
-              ? "border-pf-spotify bg-[#0d3a1a] text-pf-spotify"
+              ? "border-pf-spotify bg-pf-spotify-bg text-pf-spotify"
               : "border-pf-border bg-pf-card text-pf-text-secondary"
           }`}
         >
@@ -272,7 +271,7 @@ function Today() {
 
       {!spotifyConnected && !loading && (
         <aside className="mb-5 rounded-xl border border-dashed border-pf-border bg-pf-card px-4 py-3 text-sm text-pf-text-secondary sm:mb-6">
-          Spotify isn&apos;t connected yet — you can still journal. Connect it
+          Spotify isn&apos;t connected yet: you can still journal. Connect it
           in{" "}
           <Link to="/settings" className="text-pf-accent hover:underline">
             Settings
@@ -351,7 +350,7 @@ function Today() {
                     href={nowPlaying.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
+                    className="rounded-lg border border-pf-spotify bg-pf-spotify-bg px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
                   >
                     Open in Spotify
                   </a>
@@ -620,7 +619,7 @@ function Today() {
                             href={entry.track.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="w-fit shrink-0 rounded-lg border border-pf-spotify bg-[#0d3a1a] px-2.5 py-1 text-xs text-pf-spotify hover:opacity-90"
+                            className="w-fit shrink-0 rounded-lg border border-pf-spotify bg-pf-spotify-bg px-2.5 py-1 text-xs text-pf-spotify hover:opacity-90"
                           >
                             Spotify
                           </a>

@@ -32,6 +32,8 @@ services:
       # App session + database
       JWT_SECRET: ${JWT_SECRET}
       MONGO_URI: ${MONGO_URI}
+      # Encrypts Spotify tokens at rest in Mongo
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
       # Spotify music connect 
       #TODO: Add later
       SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}

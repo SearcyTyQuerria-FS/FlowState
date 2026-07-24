@@ -120,6 +120,15 @@ router.get("/google/callback", async (req, res) => {
 
 // separate spotify connect: only for music data, not app login
 router.get("/spotify", authMiddleware, (req, res) => {
+  // state used to just be my raw user _id, but mongo ids arent secret —
+  // anyone could craft a callback with someone else's id and hijack their
+  // spotify connection. signing it as a short-lived jwt fixes that
+  const state = jwt.sign(
+    { userId: String(req.user._id), purpose: "spotify-connect" },
+    process.env.JWT_SECRET,
+    { expiresIn: "10m" },
+  );
+
   const params = new URLSearchParams({
     client_id: process.env.SPOTIFY_CLIENT_ID,
     response_type: "code",
@@ -131,8 +140,7 @@ router.get("/spotify", authMiddleware, (req, res) => {
       "user-read-currently-playing",
       "user-read-playback-state",
     ].join(" "),
-    // state = my user id so callback knows who to save tokens on
-    state: String(req.user._id),
+    state,
     show_dialog: "true",
   });
 
@@ -153,7 +161,20 @@ router.get("/spotify/callback", async (req, res) => {
     return res.status(400).json({ error: "Missing code or state from Spotify" });
   }
 
-  const user = await User.findById(state);
+  // make sure state is a real signed token, not a guessed/crafted id
+  let statePayload;
+  try {
+    statePayload = jwt.verify(state, process.env.JWT_SECRET);
+  } catch (err) {
+    console.error("Spotify state verification failed:", err.message);
+    return res.status(400).json({ error: "Invalid or expired Spotify state" });
+  }
+
+  if (statePayload.purpose !== "spotify-connect") {
+    return res.status(400).json({ error: "Invalid Spotify state" });
+  }
+
+  const user = await User.findById(statePayload.userId);
   if (!user) {
     return res.status(400).json({ error: "Invalid Spotify state" });
   }
@@ -196,6 +217,16 @@ router.get("/spotify/callback", async (req, res) => {
   console.log(">>> Spotify connected for:", user.email);
 
   res.redirect(`${process.env.CLIENT_URL}/settings`);
+});
+
+// lets me unlink spotify from settings without touching my google login
+router.post("/spotify/disconnect", authMiddleware, async (req, res) => {
+  req.user.spotifyAccessToken = undefined;
+  req.user.spotifyRefreshToken = undefined;
+  req.user.spotifyTokenExpiresAt = undefined;
+  await req.user.save();
+
+  res.json({ ok: true });
 });
 
 module.exports = router;

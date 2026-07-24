@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = "http://localhost:5001";
+import { API_URL } from "../config";
 
 function Settings() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     async function loadMe() {
@@ -18,7 +19,7 @@ function Settings() {
         });
 
         if (!res.ok) {
-          setError("not logged in — go log in with google first");
+          setError("not logged in: go log in with google first");
           setUser(null);
           return;
         }
@@ -39,6 +40,32 @@ function Settings() {
   function handleConnectSpotify() {
     // full redirect to backend oauth, fetch wont work for this
     window.location.href = `${API_URL}/auth/spotify`;
+  }
+
+  async function handleDisconnectSpotify() {
+    setError("");
+    setStatusMessage("");
+    setDisconnecting(true);
+
+    try {
+      const res = await fetch(`${API_URL}/auth/spotify/disconnect`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        setError("could not disconnect spotify");
+        return;
+      }
+
+      setUser((prev) => (prev ? { ...prev, spotifyConnected: false } : prev));
+      setStatusMessage("spotify disconnected");
+    } catch (err) {
+      console.error(err);
+      setError("could not reach the api");
+    } finally {
+      setDisconnecting(false);
+    }
   }
 
   async function handleLogout() {
@@ -82,6 +109,9 @@ function Settings() {
       {loading && <p className="text-sm text-pf-text-secondary">Loading...</p>}
 
       {error && <p className="mb-4 text-sm text-pf-danger">{error}</p>}
+      {statusMessage && (
+        <p className="mb-4 text-sm text-pf-positive">{statusMessage}</p>
+      )}
 
       {!loading && user && (
         <>
@@ -122,8 +152,8 @@ function Settings() {
                 <p className="font-medium text-pf-text">Spotify</p>
                 <p className="text-sm text-pf-text-secondary">
                   {user.spotifyConnected
-                    ? "Connected — used for search, now playing, and music data"
-                    : "Not connected yet — needed for search and now playing"}
+                    ? "Connected: used for search, now playing, and music data"
+                    : "Not connected yet: needed for search and now playing"}
                 </p>
               </div>
 
@@ -131,22 +161,33 @@ function Settings() {
                 <p
                   className={`rounded-lg border px-2.5 py-1 text-xs ${
                     user.spotifyConnected
-                      ? "border-pf-spotify bg-[#0d3a1a] text-pf-spotify"
+                      ? "border-pf-spotify bg-pf-spotify-bg text-pf-spotify"
                       : "border-pf-border bg-pf-bg text-pf-text-secondary"
                   }`}
                 >
-                  {user.spotifyConnected ? "Connected" : "Not connected"}
+                  {user.spotifyConnected ? "Connected!" : "Not connected"}
                 </p>
 
                 <button
                   type="button"
                   onClick={handleConnectSpotify}
-                  className="rounded-lg border border-pf-spotify bg-[#0d3a1a] px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
+                  className="rounded-lg border border-pf-spotify bg-pf-spotify-bg px-3 py-1.5 text-sm text-pf-spotify hover:opacity-90"
                 >
                   {user.spotifyConnected
                     ? "Reconnect Spotify"
                     : "Connect Spotify"}
                 </button>
+
+                {user.spotifyConnected && (
+                  <button
+                    type="button"
+                    onClick={handleDisconnectSpotify}
+                    disabled={disconnecting}
+                    className="rounded-lg border border-pf-border px-3 py-1.5 text-sm text-pf-text-secondary hover:border-pf-danger hover:text-pf-danger disabled:opacity-60"
+                  >
+                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                  </button>
+                )}
               </div>
             </div>
           </article>
