@@ -2,8 +2,29 @@
 
 Played & Felt is a Spotify companion + mood journal. You play music in Spotify, then use Played & Felt to log how you felt and what was going on.
 
+### Journal entry (Today)
+Log a mood, write a note, and save it for the day.
+
+![Journal entry on the Today page](docs/screenshots/today-demo.gif)
+
+### Add a track to an entry
+Pick a song from Search and attach it to today's journal entry.
+
+![Adding a track from Search to a journal entry](docs/screenshots/today-add-track-demo.gif)
+
+### Search Spotify
+Search artists, albums, and songs from the Search page.
+
 ![Searching Spotify from the Search page](docs/screenshots/search-demo.gif)
+
+### Open in Spotify
+Click a search result to open it in Spotify.
+
 ![Opening a search result in Spotify](docs/screenshots/open-in-spotify-demo.gif)
+
+### Connect / reconnect Spotify
+Link Spotify from Settings so search and track features work.
+
 ![Reconnecting Spotify from Settings](docs/screenshots/reconnect-spotify-demo.gif)
 
 ---
