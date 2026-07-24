@@ -2,6 +2,10 @@
 
 Played & Felt is a Spotify companion + mood journal. You play music in Spotify, then use Played & Felt to log how you felt and what was going on.
 
+![Searching Spotify from the Search page](docs/screenshots/search-demo.gif)
+![Opening a search result in Spotify](docs/screenshots/open-in-spotify-demo.gif)
+![Reconnecting Spotify from Settings](docs/screenshots/reconnect-spotify-demo.gif)
+
 ---
 
 ## Project Overview
